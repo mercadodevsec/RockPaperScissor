@@ -5,6 +5,7 @@ export type RoundResult = {
     computerMove: Move
     outcome: 'win' | 'lose' | 'draw'
     message: string
+    winner?: 'player' | 'computer'
 }
 
 const moves: Move[] = ['rock', 'paper', 'scissor']
@@ -36,6 +37,7 @@ const determineRoundResult = (playerMove: Move, computerMove: Move): RoundResult
             computerMove,
             outcome: 'win',
             message: `${playerMove} beats ${computerMove}!`,
+            winner: 'player',
         }
     }
 
@@ -44,6 +46,7 @@ const determineRoundResult = (playerMove: Move, computerMove: Move): RoundResult
         computerMove,
         outcome: 'lose',
         message: `${computerMove} beats ${playerMove}!`,
+        winner: 'computer',
     }
 }
 
