@@ -1,122 +1,128 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { useEffect, useState } from 'react'
+import GameEngine, { type Move } from './GameEngine.ts'
+import './index.css'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [gameState, setGameState] = useState<'waiting' | 'playing' | 'finished'>('waiting')
+  const [roundState, setRoundState] = useState<'idle' | 'countdown' | 'result'>('idle')
+  const [showNameInput, setShowNameInput] = useState(true)
+  const [playerName, setPlayerName] = useState('')
+  const [countdown, setCountdown] = useState(3)
+  const [selectedMove, setSelectedMove] = useState<Move | null>(null)
+  const [resultMessage, setResultMessage] = useState('')
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
+  const handlePlayClick = () => {
+    setGameState('playing')
+  }
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter') {
+      const name = playerName.trim()
+      if (name) {
+        setPlayerName(name)
+        setShowNameInput(false)
+      }
+    }
+  }
+
+  const startGame = (move: Move) => {
+    setSelectedMove(move)
+    setResultMessage('')
+    setRoundState('countdown')
+    setCountdown(3)
+  }
+
+  useEffect(() => {
+    if (roundState !== 'countdown') {
+      return
+    }
+
+    if (countdown === 0) {
+      if (selectedMove) {
+        const computerMove = GameEngine.getComputerMove()
+        const roundResult = GameEngine.determineRoundResult(selectedMove, computerMove)
+        setResultMessage(roundResult.message)
+      }
+      setRoundState('result')
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      setCountdown((prev) => prev - 1)
+    }, 1000)
+
+    return () => window.clearTimeout(timer)
+  }, [countdown, roundState, selectedMove])
+
+
+  if (gameState === 'waiting') {
+    return (
+      <div>
+        <h1 id="title">Rock-Paper-Scissor</h1>
+        <button id="play-btn" onClick={handlePlayClick}>Play</button>
+      </div>
+    )
+  } else if (gameState === 'playing') {
+    return (
+      <div>
+        <h1 id="title">Rock-Paper-Scissor</h1>
+
+        {showNameInput ? (
+          <div id="user-name-container">
+            <h2>
+              Enter your name:
+              <input
+                id="user-name-el"
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                onKeyDown={handleKeyDown}
+                autoFocus
+              />
+            </h2>
+          </div>
+        ) : (
+          <>
+            <h2 id="player-name-display">Player Name: {playerName}</h2>
+            {roundState === 'countdown' ? (
+              <h2 id="countdown-display">{countdown}</h2>
+            ) : (
+              <h2 id="countdown-display">{resultMessage || 'Result'}</h2>
+            )}
+
+            <div id="game-btns-container">
+              <button id="rock-btn" onClick={() => startGame('rock')}>Rock</button>
+              <button id="paper-btn" onClick={() => startGame('paper')}>Paper</button>
+              <button id="scissor-btn" onClick={() => startGame('scissor')}>Scissor</button>
+            </div>
+
+
+          </>
+        )}
+      </div>
+    )
+  } else if (gameState === 'finished') {
+    return (
+      <div>
+        <h1 id="title">Rock-Paper-Scissor</h1>
+        <p>Game Over!</p>
         <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
+          onClick={() => {
+            setGameState('waiting')
+            setRoundState('idle')
+            setShowNameInput(true)
+            setPlayerName('')
+            setSelectedMove(null)
+            setResultMessage('')
+          }}
         >
-          Count is {count}
+          Play Again
         </button>
-      </section>
+      </div>
+    )
+  }
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  return null
 }
 
 export default App
