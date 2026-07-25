@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react'
-import GameEngine, { type Move } from './GameEngine.ts'
 import './index.css'
 
 function App() {
@@ -8,14 +7,14 @@ function App() {
   const [showNameInput, setShowNameInput] = useState(true)
   const [playerName, setPlayerName] = useState('')
   const [countdown, setCountdown] = useState(3)
-  const [selectedMove, setSelectedMove] = useState<Move | null>(null)
-  const [computerMove, setComputerMove] = useState<Move | null>(null)
+  const [playerMove, setSelectedMove] = useState<'rock' | 'paper' | 'scissor' | null>(null)
+  const [computerMove, setComputerMove] = useState<'rock' | 'paper' | 'scissor' | null>(null)
   const [resultMessage, setResultMessage] = useState('')
   const [playerScore, setPlayerScore] = useState(0)
   const [computerScore, setComputerScore] = useState(0)
-
-
-
+  const [highScore, setNewHighScore] = useState(0)
+  const [playerTally, setPlayerTally] = useState('')
+  const [computerTally, setComputerTally] = useState('')
 
   // handle Play button click
   const handlePlayClick = () => {
@@ -32,10 +31,29 @@ function App() {
       }
     }
   }
+  // insert fetch call to backend here to get computer move and result
+  async function fetchComputerMove() {
+    try {
+      const response = await fetch(`http://localhost:3000/api/game?move=${playerMove}`)
+      const data = await response.json()
 
+      setComputerMove(data.result.computerMove)
+      setResultMessage(data.result.message)
+      if (data.result.winner === 'player') {
+        setPlayerScore((prev) => prev + 1)
+        setPlayerTally((prev) => prev + '🔵')
+      } else if (data.result.winner === 'computer') {
+        setComputerScore((prev) => prev + 1)
+        setComputerTally((prev) => prev + '🔴')
+
+      }
+    } catch (error) {
+      console.error('Error fetching move:', error)
+    }
+  }
 
   // start game with selected move
-  const startGame = (move: Move) => {
+  const startGame = (move: 'rock' | 'paper' | 'scissor') => {
     setSelectedMove(move)
     setResultMessage('')
     setRoundState('countdown')
@@ -47,20 +65,9 @@ function App() {
     if (roundState !== 'countdown') {
       return
     }
-
     if (countdown === 0) {
-      if (selectedMove) {
-        const computerMove = GameEngine.getComputerMove()
-        const roundResult = GameEngine.determineRoundResult(selectedMove, computerMove)
-        setComputerMove(computerMove)
-        setResultMessage(roundResult.message)
-
-        if (roundResult.winner === 'player') {
-          setPlayerScore((prev) => prev + 1)
-        } else if (roundResult.winner === 'computer') {
-          setComputerScore((prev) => prev + 1)
-        }
-
+      if (playerMove) {
+        fetchComputerMove()
         if (playerScore >= 2 || computerScore >= 2) {
           setGameState('finished')
         }
@@ -68,13 +75,12 @@ function App() {
       setRoundState('result')
       return
     }
-
     const timer = window.setTimeout(() => {
       setCountdown((prev) => prev - 1)
     }, 1000)
 
     return () => window.clearTimeout(timer)
-  }, [countdown, roundState, selectedMove])
+  }, [countdown, roundState, playerMove])
 
 
   // render different game states
@@ -98,7 +104,7 @@ function App() {
                 id="user-name-el"
                 type="text"
                 value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
+                onChange={(e) => setPlayerName(e.target.value.slice(0, 1).toUpperCase() + e.target.value.slice(1))}
                 onKeyDown={handleKeyDown}
                 autoFocus
               />
@@ -106,19 +112,19 @@ function App() {
           </div>
         ) : (
           <>
-            <h2 id="tally-display">{playerName}: {playerScore}</h2>
-            <h2 id="tally-display">Computer: {computerScore}</h2>
+            <h2 id="tally-display">{playerName}: {playerTally}</h2>
+            <h2 id="tally-display">Computer: {computerTally}</h2>
             {roundState === 'countdown' ? (
               <>
-                <div id="move-display-container">
-                  <h2 id="move-display">{selectedMove}</h2>
+                <div id="move-dispslay-container">
+                  <h2 id="move-display">{playerMove}</h2>
                 </div>
                 <h2 id="countdown-display">{countdown}</h2>
               </>
             ) : roundState === 'result' ? (
               <>
                 <div id="move-display-container">
-                  <h2 id="move-display">{selectedMove}</h2>
+                  <h2 id="move-display">{playerMove}</h2>
                   <h2 id="computer-move-display">{computerMove}</h2>
                 </div>
                 <h2 id="countdown-display">{resultMessage}</h2>
