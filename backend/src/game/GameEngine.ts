@@ -5,8 +5,11 @@ export type RoundResult = {
     computerMove: Move
     outcome: 'win' | 'lose' | 'draw'
     message: string
-    winner?: 'player' | 'computer'
+    roundWinner?: 'player' | 'computer'
 }
+
+
+export type Winner = 'player' | 'computer'
 
 const moves: Move[] = ['rock', 'paper', 'scissor']
 
@@ -37,7 +40,7 @@ const determineRoundResult = (playerMove: Move, computerMove: Move): RoundResult
             computerMove,
             outcome: 'win',
             message: `${playerMove} beats ${computerMove}!`,
-            winner: 'player',
+            roundWinner: 'player',
         }
     }
 
@@ -46,11 +49,45 @@ const determineRoundResult = (playerMove: Move, computerMove: Move): RoundResult
         computerMove,
         outcome: 'lose',
         message: `${computerMove} beats ${playerMove}!`,
-        winner: 'computer',
+        roundWinner: 'computer',
     }
 }
 
-export default {
+class GameEngine {
+    private playerScore: number = 0
+    private computerScore: number = 0
+
+    determineWinnerResult() {
+        if (this.playerScore === 3) {
+            return 'player'
+        } else if (this.computerScore === 3) {
+            return 'computer'
+        } else {
+            null
+        }
+    }
+
+    addPlayerScore() {
+        this.playerScore++
+    }
+    addComputerScore() {
+        this.computerScore++
+    }
+    getScores() {
+        return {
+            player: this.playerScore,
+            computer: this.computerScore
+        }
+    }
+    resetGame(): void {
+        this.playerScore = 0
+        this.computerScore = 0
+    }
+
+}
+
+export default new GameEngine
+export {
     getComputerMove,
     determineRoundResult,
 }

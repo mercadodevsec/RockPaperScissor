@@ -5,25 +5,24 @@ type Move = 'rock' | 'paper' | 'scissor'
 
 function App() {
   const [gameState, setGameState] = useState<'waiting' | 'playing' | 'finished'>('waiting')
-  const [roundState, setRoundState] = useState<'idle' | 'countdown' | 'result'>('idle')
+  const [roundState, setRoundState] = useState<'countdown' | 'result'>('result')
   const [showNameInput, setShowNameInput] = useState(true)
   const [playerName, setPlayerName] = useState('')
   const [countdown, setCountdown] = useState(3)
   const [playerMove, setSelectedMove] = useState<Move | null>(null)
   const [computerMove, setComputerMove] = useState<Move | null>(null)
   const [resultMessage, setResultMessage] = useState('')
-  const [playerScore, setPlayerScore] = useState(0)
-  const [computerScore, setComputerScore] = useState(0)
   const [checkHighScore, setCheckHighScore] = useState(false)
   const [playerTally, setPlayerTally] = useState('')
   const [computerTally, setComputerTally] = useState('')
+  const [winner, setWinner] = useState<'player' | 'computer' | null>(null)
   const [gameResult, setGameResult] = useState<{
     result: {
       playerMove: Move
       computerMove: Move
       outcome: 'win' | 'lose' | 'draw'
       message: string
-      winner?: 'player' | 'computer'
+      roundWinner?: 'player' | 'computer'
     }
   } | null>(null)
   const [gameLeaderboard, setGameLeaderbord] = useState("")
@@ -75,41 +74,43 @@ function App() {
   }, [gameState])
 
   // fetch data leaderboard if user wants to view high score 
-  useEffect(async () => {
-    const fetchGameLeaderboard = async () => {
-      try {
-        const res = await fetch(`http://localhost:3000/api/game`)
-        const leaderboardResult = await res.json()
-        const leaderBoardResultHTML = leaderboardResult.map(score => 
+  // useEffect(async () => {
+  //   const fetchGameLeaderboard = async () => {
+  //     try {
+  //       const res = await fetch(`http://localhost:3000/api/game`)
+  //       const leaderboardResult = await res.json()
+  //       const leaderBoardResultHTML = leaderboardResult.map(score => 
 
-       ).join('')
+  //      ).join('')
 
-        return
+  //       return
 
 
-        // setGameLeaderbord(strings)
+  //       // setGameLeaderbord(strings)
 
-      } catch (error) {
-        console.error('Error:', error)
-      }
-    }
+  //     } catch (error) {
+  //       console.error('Error:', error)
+  //     }
+  //   }
 
-  }, [checkHighScore])
-  // insert fetch call to backend here to get computer move and result
+  // }, [checkHighScore])
+  // insert fetch call to server here to get computer move and result
   useEffect(() => {
-    // Auto-runs when playerMove changes
-    const fetchGameResultData = async () => {
-      try {
-        const res = await fetch(`http://localhost:3000/api/game?move=${playerMove}`)
-        const gameResult = await res.json()
-        setGameResult(gameResult)
+    if (roundState === 'countdown') {
+      // Auto-runs when playerMove changes
+      const fetchRoundResultData = async () => {
+        try {
+          const res = await fetch(`http://localhost:3000/api/game/results?move=${playerMove}`)
+          const gameResult = await res.json()
+          setGameResult(gameResult)
+        }
+        catch (error) {
+          console.error('Error:', error)
+        }
       }
-      catch (error) {
-        console.error('Error:', error)
-      }
+      fetchRoundResultData()
     }
-    fetchGameResultData()
-  }, [playerMove])
+  }, [roundState])
 
   // countdown effect
   useEffect(() => {
@@ -120,16 +121,10 @@ function App() {
       if (playerMove && gameResult) {
         setComputerMove(gameResult.result.computerMove)
         setResultMessage(gameResult.result.message)
-        if (gameResult.result.winner === 'player') {
-          setPlayerScore((prev) => prev + 1)
+        if (gameResult.result.roundWinner === 'player') {
           setPlayerTally((prev) => prev + '🔵')
-        } else if (gameResult.result.winner === 'computer') {
-          setComputerScore((prev) => prev + 1)
+        } else if (gameResult.result.roundWinner === 'computer') {
           setComputerTally((prev) => prev + '🔴')
-
-        }
-        if (playerScore >= 2 || computerScore >= 2) {
-          setGameState('finished')
         }
       }
       setRoundState('result')
@@ -142,20 +137,36 @@ function App() {
     return () => window.clearTimeout(timer)
   }, [countdown, roundState, playerMove])
 
-  if (checkHighScore === true) {
-    return (
-      <div>
-        <h1 id='title'>Rock-Paper-Scissor</h1>
-        <h2> id='core-title-display</h2>
-        <ol id='list-display'>
-          {gameLeaderboard ? (
-            <li>{printLeaderboard}</li>
-          ) : ""}
-        </ol>
-      </div>
-    )
-  }
+  // useEffect(() => {
+  //   if (gameResult && 'gameWinner' in gameResult) {
+  //     const winner = gameResult.gameWinner
+
+  //     if (winner === 'player' || winner === 'computer') {
+  //       setWinner(winner)
+  //     } else {
+  //       setWinner(null)
+  //     }
+  //   }
+  //   setGameState('finished')
+  // }, [gameResult])
+
+
+
+  // if (checkHighScore === true) {
+  //   return (
+  //     <div>
+  //       <h1 id='title'>Rock-Paper-Scissor</h1>
+  //       <h2> id='core-title-display</h2>
+  //       <ol id='list-display'>
+  //         {gameLeaderboard ? (
+  //           <li>{printLeaderboard}</li>
+  //         ) : ""}
+  //       </ol>
+  //     </div>
+  //   )
+  // }
   // render different game states
+
   if (gameState === 'waiting') {
     return (
       <div>
@@ -226,7 +237,14 @@ function App() {
     return (
       <div>
         <h1 id='title'>Rock-Paper-Scissor</h1>
-        {playerScore > computerScore ? (
+        <h2 id='tally-display'>{playerName}: {playerTally}</h2>
+        <h2 id='tally-display'>Computer: {computerTally}</h2>
+        <div id='move-display-container'>
+          <h2 id='move-display'>{playerMove}</h2>
+          <h2 id='computer-move-display'>{computerMove}</h2>
+          <h2 id='countdown-display'>{resultMessage}</h2>
+        </div>
+        {winner === 'player' ? (
           <h2 id='winner-display'>{playerName} wins!</h2>
         ) : (
           <h2 id='winner-display'>Computer wins!</h2>
@@ -234,13 +252,10 @@ function App() {
         <button
           onClick={() => {
             setGameState('waiting')
-            setRoundState('idle')
             setShowNameInput(true)
             setPlayerName('')
             setSelectedMove(null)
             setResultMessage('')
-            setPlayerScore(0)
-            setComputerScore(0)
             setPlayerTally('')
             setComputerTally('')
           }}

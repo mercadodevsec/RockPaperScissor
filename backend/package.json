@@ -24,6 +24,7 @@
     "typescript": "^7.0.2"
   },
   "allowScripts": {
-    "sqlite3@6.0.1": true
+    "sqlite3@6.0.1": true,
+    "esbuild@0.28.1": true
   }
 }
