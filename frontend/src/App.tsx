@@ -6,15 +6,16 @@ type Move = 'rock' | 'paper' | 'scissor'
 function App() {
   const [gameState, setGameState] = useState<'waiting' | 'playing' | 'finished'>('waiting')
   const [roundState, setRoundState] = useState<'countdown' | 'result'>('result')
-  const [showNameInput, setShowNameInput] = useState(true)
   const [playerName, setPlayerName] = useState('')
-  const [countdown, setCountdown] = useState(3)
+  const [showNameInput, setShowNameInput] = useState(true)
+  const [countdown, setCountdown] = useState(1)
   const [playerMove, setSelectedMove] = useState<Move | null>(null)
   const [computerMove, setComputerMove] = useState<Move | null>(null)
   const [resultMessage, setResultMessage] = useState('')
   const [checkHighScore, setCheckHighScore] = useState(false)
   const [playerTally, setPlayerTally] = useState('')
   const [computerTally, setComputerTally] = useState('')
+  const [printLeaderboard, setPrintLeaderboard] = useState<React.ReactNode>(null)
   const [winner, setWinner] = useState<'player' | 'computer' | null>(null)
   const [gameResult, setGameResult] = useState<{
     result: {
@@ -22,21 +23,29 @@ function App() {
       computerMove: Move
       outcome: 'win' | 'lose' | 'draw'
       message: string
-      roundWinner?: 'player' | 'computer'
+      roundWinner: 'player' | 'computer'
+      gameWinner: 'player' | 'computer'
     }
   } | null>(null)
-  const [gameLeaderboard, setGameLeaderbord] = useState("")
+
+  const [gameLeaderboard, setGameLeaderbord] = useState<{
+    name: string
+    result: 'player' | 'computer'
+    playerTally: number
+    computerTally: number
+    datestamp: string
+  }[]>([])
 
   // start game with selected move
   const startGame = (move: 'rock' | 'paper' | 'scissor') => {
     setSelectedMove(move)
     setResultMessage('')
     setRoundState('countdown')
-    setCountdown(3)
+    setCountdown(1)
   }
 
   // handle High Score Button
-  const handleHighScoreClick = async () => {
+  const handleHighScoreClick = () => {
     setCheckHighScore(true)
   }
 
@@ -52,18 +61,52 @@ function App() {
       if (name) {
         setPlayerName(name)
         setShowNameInput(false)
+      } else {
+        setPlayerName('Player')
+        setShowNameInput(false)
       }
     }
   }
+  // handle back button from High score page
+  const handleBackButton = () => {
+    setCheckHighScore(false)
+  }
+
+
+
+
+
 
   // push data leaderboard to backend
   useEffect(() => {
+    const abortController = new AbortController()
+
     if (gameState === 'finished') {
+      if (!playerName || !winner) {
+        console.error('Missing required data')
+        return
+      }
       const pushLeaderbordData = async () => {
         try {
-          await fetch(`http://localhost:3000/api/game`, {
-            method: 'POST'
-            // add proeprties
+          const payload = {
+            name: playerName,
+            result: winner,
+            playerTally: playerTally.length / 2,
+            computerTally: computerTally.length / 2,
+            datestamp: new Date().toLocaleDateString('en-US', {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            })
+          }
+          console.log(payload)
+
+          await fetch(`http://localhost:3000/api/game/save`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload)
           })
         } catch (error) {
           console.error('Error:', error)
@@ -71,31 +114,86 @@ function App() {
       }
       pushLeaderbordData()
     }
+    return () => {
+      abortController.abort() // 
+    }
   }, [gameState])
 
+
+
+
+
+
+
   // fetch data leaderboard if user wants to view high score 
-  // useEffect(async () => {
-  //   const fetchGameLeaderboard = async () => {
-  //     try {
-  //       const res = await fetch(`http://localhost:3000/api/game`)
-  //       const leaderboardResult = await res.json()
-  //       const leaderBoardResultHTML = leaderboardResult.map(score => 
+  useEffect(() => {
+    const abortController = new AbortController()
 
-  //      ).join('')
+    if (checkHighScore) {
+      const fetchGameLeaderboard = async () => {
+        try {
+          const printSymbol = (count: number, emoji: string): string => {
+            return emoji.repeat(count)
+          }
 
-  //       return
+          // ✅ Connect abort signal to fetch
+          const res = await fetch(`http://localhost:3000/api/game/load`, {
+            signal: abortController.signal // ✅ Add this!
+          })
+
+          // ✅ Check if response is OK
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`)
+          }
+
+          const leaderboardResult = await res.json()
+
+          //  Only update if still mounted
+
+          //  Set the data (use leaderboardResult directly)
+          setGameLeaderbord(leaderboardResult)
+          console.log('📊 Leaderboard data:', leaderboardResult)
+
+          //  Get games array from the result
+          const games = leaderboardResult.games || []
+
+          //  Now create HTML from the fetched data
+          const leaderboardJSX = games.map((game: any) => (
+            <li key={game.id}>
+              <h2>{game.name}</h2>
+              <h2>{game.result}</h2>
+              <h2>{printSymbol(game.playerTally, '🔵')}</h2>
+              <h2>{printSymbol(game.computerTally, '🔴')}</h2>
+              <h2>{game.datestamp}</h2>
+            </li>
+          ))
+
+          setPrintLeaderboard(<ol id='score-list-display'>{leaderboardJSX}</ol>)
+
+        } catch (error) {
+          //  Ignore abort errors (cleanup)
+          console.error('❌ Error fetching leaderboard:', error)
+        }
+      }
+
+      fetchGameLeaderboard()
+    }
+
+    // ✅ Cleanup: abort fetch and mark as unmounted
+    return () => {
+      abortController.abort()
+    }
+  }, [checkHighScore])
 
 
-  //       // setGameLeaderbord(strings)
 
-  //     } catch (error) {
-  //       console.error('Error:', error)
-  //     }
-  //   }
 
-  // }, [checkHighScore])
+
+
+
   // insert fetch call to server here to get computer move and result
   useEffect(() => {
+    const abortController = new AbortController()
     if (roundState === 'countdown') {
       // Auto-runs when playerMove changes
       const fetchRoundResultData = async () => {
@@ -110,7 +208,16 @@ function App() {
       }
       fetchRoundResultData()
     }
-  }, [roundState])
+    return () => {
+      abortController.abort()
+    }
+  }, [roundState, playerMove])
+
+
+
+
+
+
 
   // countdown effect
   useEffect(() => {
@@ -118,7 +225,7 @@ function App() {
       return
     }
     if (countdown === 0) {
-      if (playerMove && gameResult) {
+      if (gameResult) {
         setComputerMove(gameResult.result.computerMove)
         setResultMessage(gameResult.result.message)
         if (gameResult.result.roundWinner === 'player') {
@@ -126,8 +233,8 @@ function App() {
         } else if (gameResult.result.roundWinner === 'computer') {
           setComputerTally((prev) => prev + '🔴')
         }
+        setRoundState('result')
       }
-      setRoundState('result')
       return
     }
     const timer = window.setTimeout(() => {
@@ -135,45 +242,54 @@ function App() {
     }, 1000)
 
     return () => window.clearTimeout(timer)
-  }, [countdown, roundState, playerMove])
-
-  // useEffect(() => {
-  //   if (gameResult && 'gameWinner' in gameResult) {
-  //     const winner = gameResult.gameWinner
-
-  //     if (winner === 'player' || winner === 'computer') {
-  //       setWinner(winner)
-  //     } else {
-  //       setWinner(null)
-  //     }
-  //   }
-  //   setGameState('finished')
-  // }, [gameResult])
+  }, [countdown, roundState, gameResult])
 
 
 
-  // if (checkHighScore === true) {
-  //   return (
-  //     <div>
-  //       <h1 id='title'>Rock-Paper-Scissor</h1>
-  //       <h2> id='core-title-display</h2>
-  //       <ol id='list-display'>
-  //         {gameLeaderboard ? (
-  //           <li>{printLeaderboard}</li>
-  //         ) : ""}
-  //       </ol>
-  //     </div>
-  //   )
-  // }
+
+
+
+
+  // fetch winner in server if there is
+  useEffect(() => {
+    if (gameResult?.result?.gameWinner && countdown === 0) {
+      const winner = gameResult.result.gameWinner
+      setGameState('finished')
+      setWinner(winner)
+    }
+  }, [gameResult, countdown])
+
+
+
+
+
+
+  if (checkHighScore) {
+
+    return (
+      <div>
+        <h1 id='title'>Rock-Paper-Scissor</h1>
+        <h2 id='score-title-display'>Leaderboard</h2>
+        {printLeaderboard ? printLeaderboard : <p>No data</p>}
+        <button id='back-btn' onClick={handleBackButton}>Go back</button>
+      </div>
+    )
+  }
+
+
+
+
+
+
+
   // render different game states
-
   if (gameState === 'waiting') {
     return (
       <div>
         <h1 id='title'>Rock-Paper-Scissor</h1>
         <div>
           <button id='play-btn' onClick={handlePlayClick}>Play</button>
-          <button id='view-highscore-btn' onClick={handleHighScoreClick}></button>
+          <button id='view-highscore-btn' onClick={handleHighScoreClick}>View High Score</button>
         </div>
       </div>
     )
@@ -181,7 +297,6 @@ function App() {
     return (
       <div>
         <h1 id='title'>Rock-Paper-Scissor</h1>
-
         {showNameInput ? (
           <div id='user-name-container'>
             <h2>
@@ -251,17 +366,31 @@ function App() {
         )}
         <button
           onClick={() => {
+            setGameState('playing')
+            // setPlayerName('')
+            setSelectedMove(null)
+            setResultMessage('')
+            setPlayerTally('')
+            setComputerTally('')
+            setWinner(null)
+          }}
+        >
+          Play Again
+        </button>
+        <button
+          onClick={() => {
             setGameState('waiting')
-            setShowNameInput(true)
             setPlayerName('')
             setSelectedMove(null)
             setResultMessage('')
             setPlayerTally('')
             setComputerTally('')
+            setWinner(null)
           }}
         >
-          Play Again
+          New Game
         </button>
+        <button id='view-highscore-btn' onClick={handleHighScoreClick}>View High Score</button>
       </div>
     )
   }

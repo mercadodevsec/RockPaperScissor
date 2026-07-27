@@ -1,13 +1,15 @@
 import express from 'express'
-import { roundResults, gameWinner } from '../controllers/gameControllers.ts'
+import { roundResults, saveGameResult, loadLeaderboard } from '../controllers/gameControllers.ts'
 
 const router = express.Router()
 
 
-// Get methods
+// GEt methods
 router.get('/results', roundResults)
-// router.get('/results', gameWinner)
+router.get('/load', loadLeaderboard)
 
+// POST methods
+router.post('/save', saveGameResult)
 
 
 export default router;

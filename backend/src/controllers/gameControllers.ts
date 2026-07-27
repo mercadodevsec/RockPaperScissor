@@ -1,5 +1,6 @@
 import type { Request, Response } from 'express';
 import Game, { getComputerMove, determineRoundResult, type Move } from '../game/GameEngine.ts'
+import GameModel from '../models/Game.ts'
 
 export const roundResults = (req: Request, res: Response) => {
     const move = req.query.move?.toString().toLowerCase();
@@ -23,21 +24,66 @@ export const roundResults = (req: Request, res: Response) => {
         console.log('computer', Game.getScores().computer)
     }
 
-    // if (Game.determineWinnerResult()) {
-    //     const winner = Game.determineWinnerResult()
-    //     Game.resetGame()
-    //     return res.json({
-    //         ...result,           // ← Spread original
-    //         gameWinner: winner,
-    //     })
-    // }
+    if (Game.determineWinnerResult()) {
+        const winner = Game.determineWinnerResult()
+        console.log('winner:', winner)
+        Game.resetGame()
+        return res.json({
+            result: {
+                ...result,
+                gameWinner: winner,
+            }
+        })
+    }
 
     return res.json({
         result
     });
 }
 
-export const gameWinner = (req: Request, res: Request) => {
-    // const winner
+export const saveGameResult = async (req: Request, res: Response) => {
+    try {
+        //  Gets payload from request body
+        const { name, result, playerTally, computerTally, datestamp } = req.body
+
+        // Uses Model to save (Model uses connection internally)
+        const game = await GameModel.create({
+            name,
+            result,
+            playerTally,
+            computerTally,
+            datestamp
+        })
+        console.log('📥 Received payload:', req.body)
+        res.status(201).json({
+            message: 'Game saved successfully',
+            game
+        })
+    } catch (error) {
+        res.status(500).json({ error: 'Failed to save game' })
+    }
+}
+
+export const loadLeaderboard = async (req: Request, res: Response) => {
+    try {
+        // ✅ Get all games from database, sorted by playerTally (highest first)
+        const games = await GameModel.findAll({
+            attributes: ['name', 'result', 'playerTally', 'computerTally', 'datestamp'],
+            order: [
+                ['playerTally', 'DESC'],  // Highest score first
+                ['createdAt', 'DESC']     // Then newest first
+            ],
+        })
+
+        console.log(`Loaded ${games.length} games from leaderboard`)
+
+        res.status(200).json({
+            message: 'Leaderboard loaded successfully',
+            games: games
+        })
+    } catch (error) {
+        console.error('❌ Error loading leaderboard:', error)
+        res.status(500).json({ error: 'Failed to load the leaderboard' })
+    }
 }
 

@@ -7,12 +7,14 @@
   "type": "module",
   "main": "server.ts",
   "scripts": {
-    "dev": "nodemon --exec tsx ./src/server.ts"
+    "dev": "nodemon --exec tsx ./src/server.ts",
+    "sync": "tsx sync.ts"
   },
   "dependencies": {
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1"
   },
   "devDependencies": {
@@ -24,7 +26,10 @@
     "typescript": "^7.0.2"
   },
   "allowScripts": {
-    "sqlite3@6.0.1": true,
-    "esbuild@0.28.1": true
+    "esbuild@0.28.1": true,
+    "sqlite3@6.0.1": true
+  },
+  "overrides": {
+    "uuid": "14.0.0"
   }
 }
