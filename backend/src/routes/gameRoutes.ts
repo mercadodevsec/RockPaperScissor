@@ -1,5 +1,5 @@
 import express from 'express'
-import { roundResults, saveGameResult, loadLeaderboard } from '../controllers/gameControllers.ts'
+import { roundResults, saveGameResult, loadLeaderboard, resetGame } from '../controllers/gameControllers.ts'
 
 const router = express.Router()
 
@@ -10,6 +10,7 @@ router.get('/load', loadLeaderboard)
 
 // POST methods
 router.post('/save', saveGameResult)
+router.post('/reset', resetGame)
 
 
 export default router;

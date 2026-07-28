@@ -2,6 +2,16 @@ import type { Request, Response } from 'express';
 import Game, { getComputerMove, determineRoundResult, type Move } from '../game/GameEngine.ts'
 import GameModel from '../models/Game.ts'
 
+export const resetGame = (req: Request, res: Response) => {
+    try {
+        Game.resetGame()
+        console.log('Game reset successfully')
+    } catch (error) {
+        res.status(500).json({ error: 'Soomething went wrong. Failed to reset game' })
+    }
+
+}
+
 export const roundResults = (req: Request, res: Response) => {
     const move = req.query.move?.toString().toLowerCase();
     const validMoves: Move[] = ['rock', 'paper', 'scissor'];
@@ -55,10 +65,6 @@ export const saveGameResult = async (req: Request, res: Response) => {
             datestamp
         })
         console.log('📥 Received payload:', req.body)
-        res.status(201).json({
-            message: 'Game saved successfully',
-            game
-        })
     } catch (error) {
         res.status(500).json({ error: 'Failed to save game' })
     }
