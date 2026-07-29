@@ -27,7 +27,7 @@ function App() {
   const [roundState, setRoundState] = useState<'countdown' | 'result' | 'idle'>('idle')
   const [playerName, setPlayerName] = useState('')
   const [showNameInput, setShowNameInput] = useState(true)
-  const [countdown, setCountdown] = useState(1)
+  const [countdown, setCountdown] = useState(3)
   const [playerMove, setPlayerMove] = useState<Move | null>(null)
   const [botMove, setBotMove] = useState<Move | null>(null)
   const [resultMessage, setResultMessage] = useState('')
@@ -53,7 +53,7 @@ function App() {
     setPlayerMove(move)
     setResultMessage('')
     setRoundState('countdown')
-    setCountdown(1)
+    setCountdown(3)
   }
 
   // handle Game History Button

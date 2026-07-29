@@ -94,7 +94,7 @@ paths:
                   result: "win"
                   playerTally: 3
                   computerTally: 1
-                  datestamp: "2026-07-28T14:30:00Z"
+                  datestamp: "Jul 28, 2026"
               lossExample:
                 summary: Player loses
                 value:
@@ -102,7 +102,7 @@ paths:
                   result: "loss"
                   playerTally: 2
                   computerTally: 3
-                  datestamp: "2026-07-28T15:45:00Z"
+                  datestamp: "Jul 28, 2026"
 
       responses:
         201:
@@ -144,17 +144,17 @@ paths:
                     result: "win"
                     playerTally: 3
                     computerTally: 1
-                    datestamp: "2026-07-28T14:30:00Z"
+                    datestamp: "Jul 26, 2026"
                   - name: "Jane Smith"
                     result: "loss"
                     playerTally: 2
                     computerTally: 3
-                    datestamp: "2026-07-28T13:20:00Z"
+                    datestamp: "Jul 27, 2026"
                   - name: "Alex Johnson"
                     result: "draw"
                     playerTally: 2
                     computerTally: 2
-                    datestamp: "2026-07-27T10:15:00Z"
+                    datestamp: "Jul 28, 2026"
         500:
           description: Failed to load game history
           content:
@@ -225,7 +225,7 @@ components:
           type: string
           format: date-time
           description: When the game was played
-          example: "2026-07-28T14:30:00Z"
+          example: "Jul 28, 2026"
 
     # ============= RESPONSE SCHEMAS =============
     RoundResult:
@@ -313,7 +313,7 @@ components:
           type: string
           format: date-time
           description: When the game was played
-          example: "2026-07-28T14:30:00Z"
+          example: "Jul 28, 2026"
 
     ErrorResponse:
       type: object
