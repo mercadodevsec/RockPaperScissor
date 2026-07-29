@@ -20,7 +20,7 @@ const Game = sequelize.define('Game', {
     allowNull: false,
     defaultValue: 0
   },
-  computerTally: {
+  botTally: {
     type: DataTypes.INTEGER,
     allowNull: false,
     defaultValue: 0
@@ -30,7 +30,7 @@ const Game = sequelize.define('Game', {
     allowNull: false
   }
 }, {
-  tableName: 'leaderboard',
+  tableName: 'gamehistory',
   timestamps: true
 })
 

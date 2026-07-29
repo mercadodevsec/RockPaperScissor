@@ -5,6 +5,7 @@ import GameModel from '../models/Game.ts'
 export const resetGame = (req: Request, res: Response) => {
     try {
         Game.resetGame()
+        res.status(200).json({ message: 'Game reset successfully' })
         console.log('Game reset successfully')
     } catch (error) {
         res.status(500).json({ error: 'Soomething went wrong. Failed to reset game' })
@@ -14,31 +15,31 @@ export const resetGame = (req: Request, res: Response) => {
 
 export const roundResults = (req: Request, res: Response) => {
     const move = req.query.move?.toString().toLowerCase();
-    const validMoves: Move[] = ['rock', 'paper', 'scissor'];
 
-    if (!move || !validMoves.includes(move as Move)) {
+    if (!move || !move.includes(move as Move)) {
         return res.status(400).json({
             message: 'Please provide a valid move query parameter: rock, paper, or scissor',
         });
     }
 
-    const computerMove = getComputerMove();
-    const result = determineRoundResult(move as Move, computerMove);
+    const botMove = getComputerMove();
+    const result = determineRoundResult(move as Move, botMove);
 
 
     if (result.roundWinner === 'player') {
         Game.addPlayerScore()
         console.log('player', Game.getScores().player)
-    } else if (result.roundWinner === 'computer') {
+    } else if (result.roundWinner === 'bot') {
         Game.addComputerScore()
-        console.log('computer', Game.getScores().computer)
+        console.log('bot', Game.getScores().bot)
     }
 
     if (Game.determineWinnerResult()) {
         const winner = Game.determineWinnerResult()
         console.log('winner:', winner)
         Game.resetGame()
-        return res.json({
+        return res.status(200).json({
+            message: 'Results loaded successfully',
             result: {
                 ...result,
                 gameWinner: winner,
@@ -46,7 +47,8 @@ export const roundResults = (req: Request, res: Response) => {
         })
     }
 
-    return res.json({
+    return res.status(200).json({
+        message: 'Results loaded successfully',
         result
     });
 }
@@ -54,42 +56,41 @@ export const roundResults = (req: Request, res: Response) => {
 export const saveGameResult = async (req: Request, res: Response) => {
     try {
         //  Gets payload from request body
-        const { name, result, playerTally, computerTally, datestamp } = req.body
+        const { name, result, playerTally, botTally, datestamp } = req.body
 
         // Uses Model to save (Model uses connection internally)
         const game = await GameModel.create({
             name,
             result,
             playerTally,
-            computerTally,
+            botTally,
             datestamp
         })
-        console.log('📥 Received payload:', req.body)
+        res.status(201).json({ message: 'Game saved successfully' })
+        console.log('Received payload!')
     } catch (error) {
         res.status(500).json({ error: 'Failed to save game' })
     }
 }
 
-export const loadLeaderboard = async (req: Request, res: Response) => {
+export const loadGameHistory = async (req: Request, res: Response) => {
     try {
-        // ✅ Get all games from database, sorted by playerTally (highest first)
         const games = await GameModel.findAll({
-            attributes: ['name', 'result', 'playerTally', 'computerTally', 'datestamp'],
+            attributes: ['name', 'result', 'playerTally', 'botTally', 'datestamp'],
             order: [
-                ['playerTally', 'DESC'],  // Highest score first
                 ['createdAt', 'DESC']     // Then newest first
             ],
         })
 
-        console.log(`Loaded ${games.length} games from leaderboard`)
+        console.log(`Loaded ${games.length} games from gamehistory`)
 
         res.status(200).json({
-            message: 'Leaderboard loaded successfully',
+            message: 'GameHistory loaded successfully',
             games: games
         })
     } catch (error) {
-        console.error('❌ Error loading leaderboard:', error)
-        res.status(500).json({ error: 'Failed to load the leaderboard' })
+        console.error('❌ Error loading gamehistory:', error)
+        res.status(500).json({ error: 'Failed to load the gamehistory' })
     }
 }
 

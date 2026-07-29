@@ -15,19 +15,23 @@
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "sequelize": "^6.37.8",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^6.0.1",
+    "swagger-ui-express": "^5.0.1",
+    "yaml": "^2.8.0"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",
     "@types/node": "^26.1.1",
+    "@types/swagger-ui-express": "^4.1.8",
     "nodemon": "^3.1.14",
     "tsx": "^4.23.1",
     "typescript": "^7.0.2"
   },
   "allowScripts": {
     "esbuild@0.28.1": true,
-    "sqlite3@6.0.1": true
+    "sqlite3@6.0.1": true,
+    "@scarf/scarf@1.4.0": true
   },
   "overrides": {
     "uuid": "14.0.0"

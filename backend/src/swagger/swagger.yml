@@ -1,0 +1,328 @@
+openapi: 3.0.0
+info:
+  title: Rock-Paper-Scissors Game API
+  description: API for managing RPS game rounds, saving results, resetting game, and loading game history
+  version: 1.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:3000/api/game
+    description: Development server
+  - url: https://your-production-url.com/api/game
+    description: Production server
+
+paths:
+  /results:
+    get:
+      summary: Play a round of Rock-Paper-Scissors
+      description: |
+        Submit your move and get the round result.
+        When a player reaches 3 points, the game ends, returns a winner, and automatically resets.
+      parameters:
+        - in: query
+          name: move
+          required: true
+          schema:
+            type: string
+            enum: [rock, paper, scissor]
+          description: Your move choice
+          example: rock
+      responses:
+        200:
+          description: Round result (or game winner if match ended)
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/RoundResult'
+                  - $ref: '#/components/schemas/GameWinnerResult'
+              examples:
+                roundResult:
+                  summary: Normal round (game continues)
+                  value:
+                    message: "Results loaded successfully"
+                    result:
+                      playerMove: "rock"
+                      computerMove: "scissor"
+                      outcome: "win"
+                      message: "rock beats scissor!"
+                      roundWinner: "player"
+                gameWinner:
+                  summary: Game over (winner declared and game auto-reset)
+                  value:
+                    message: "Results loaded successfully"
+                    result:
+                      playerMove: "paper"
+                      computerMove: "rock"
+                      outcome: "win"
+                      message: "paper beats rock!"
+                      roundWinner: "player"
+                      gameWinner: "player"
+        400:
+          description: Invalid move parameter
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                message: "Please provide a valid move query parameter: rock, paper, or scissor"
+        500:
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Something went wrong"
+
+  /save:
+    post:
+      summary: Save a completed game to the game history
+      description: Save game results after a match is complete
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SaveGameRequest'
+            examples:
+              winExample:
+                summary: Player wins
+                value:
+                  name: "John Doe"
+                  result: "win"
+                  playerTally: 3
+                  computerTally: 1
+                  datestamp: "2026-07-28T14:30:00Z"
+              lossExample:
+                summary: Player loses
+                value:
+                  name: "Jane Smith"
+                  result: "loss"
+                  playerTally: 2
+                  computerTally: 3
+                  datestamp: "2026-07-28T15:45:00Z"
+
+      responses:
+        201:
+          description: Game saved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Game saved successfully"
+              example:
+                message: "Game saved successfully"
+        500:
+          description: Failed to save game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Failed to save game"
+
+  /load:
+    get:
+      summary: Load the game history
+      description: Retrieve all saved games sorted by highest player score (descending) and newest first
+      responses:
+        200:
+          description: GameHistory loaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameHistoryResponse'
+              example:
+                message: "GameHistory loaded successfully"
+                games:
+                  - name: "John Doe"
+                    result: "win"
+                    playerTally: 3
+                    computerTally: 1
+                    datestamp: "2026-07-28T14:30:00Z"
+                  - name: "Jane Smith"
+                    result: "loss"
+                    playerTally: 2
+                    computerTally: 3
+                    datestamp: "2026-07-28T13:20:00Z"
+                  - name: "Alex Johnson"
+                    result: "draw"
+                    playerTally: 2
+                    computerTally: 2
+                    datestamp: "2026-07-27T10:15:00Z"
+        500:
+          description: Failed to load game history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Failed to load the game history"
+
+  /reset:
+    post:
+      summary: Reset the current game state
+      description: Reset scores and game state to start a new match manually
+      responses:
+        200:
+          description: Game reset successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Game reset successfully"
+              example:
+                message: "Game reset successfully"
+        500:
+          description: Failed to reset game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                error: "Something went wrong. Failed to reset game"
+
+components:
+  schemas:
+    # ============= REQUEST SCHEMAS =============
+    SaveGameRequest:
+      type: object
+      required:
+        - name
+        - result
+        - playerTally
+        - computerTally
+        - datestamp
+      properties:
+        name:
+          type: string
+          description: Player's name
+          example: "John Doe"
+        result:
+          type: string
+          enum: [win, loss, draw]
+          description: Final game result
+          example: "win"
+        playerTally:
+          type: integer
+          minimum: 0
+          description: Player's final score (0-3 for standard RPS)
+          example: 3
+        computerTally:
+          type: integer
+          minimum: 0
+          description: Computer's final score (0-3 for standard RPS)
+          example: 1
+        datestamp:
+          type: string
+          format: date-time
+          description: When the game was played
+          example: "2026-07-28T14:30:00Z"
+
+    # ============= RESPONSE SCHEMAS =============
+    RoundResult:
+      type: object
+      properties:
+        message:
+          type: string
+          description: Status message
+          example: "Results loaded successfully"
+        result:
+          type: object
+          properties:
+            playerMove:
+              type: string
+              enum: [rock, paper, scissor]
+              description: The player's move
+              example: "rock"
+            computerMove:
+              type: string
+              enum: [rock, paper, scissor]
+              description: The computer's move
+              example: "scissor"
+            outcome:
+              type: string
+              enum: [win, lose, draw]
+              description: The result of the round
+              example: "win"
+            message:
+              type: string
+              description: Descriptive message about the round outcome
+              example: "rock beats scissor!"
+            roundWinner:
+              type: string
+              enum: [player, computer]
+              description: Who won the round (only present if not a draw)
+              example: "player"
+
+    GameWinnerResult:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/RoundResult'
+        - type: object
+          properties:
+            result:
+              type: object
+              properties:
+                gameWinner:
+                  type: string
+                  enum: [player, computer]
+                  description: Who won the entire match (game auto-resets after this)
+                  example: "player"
+
+    GameHistoryResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "GameHistory loaded successfully"
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameEntry'
+
+    GameEntry:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Player's name
+          example: "John Doe"
+        result:
+          type: string
+          enum: [win, loss, draw]
+          description: Final game result
+          example: "win"
+        playerTally:
+          type: integer
+          description: Player's final score
+          example: 3
+        computerTally:
+          type: integer
+          description: Computer's final score
+          example: 1
+        datestamp:
+          type: string
+          format: date-time
+          description: When the game was played
+          example: "2026-07-28T14:30:00Z"
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message (for 500 errors)
+          example: "Failed to save game"
+        message:
+          type: string
+          description: Error message (for 400 validation errors)
+          example: "Please provide a valid move query parameter: rock, paper, or scissor"

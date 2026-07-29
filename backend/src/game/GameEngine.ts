@@ -2,14 +2,14 @@ export type Move = 'rock' | 'paper' | 'scissor'
 
 export type RoundResult = {
     playerMove: Move
-    computerMove: Move
+    botMove: Move
     outcome: 'win' | 'lose' | 'draw'
     message: string
-    roundWinner?: 'player' | 'computer'
+    roundWinner?: 'player' | 'bot'
 }
 
 
-export type Winner = 'player' | 'computer'
+export type Winner = 'player' | 'bot'
 
 const moves: Move[] = ['rock', 'paper', 'scissor']
 
@@ -18,11 +18,11 @@ const getComputerMove = (): Move => {
     return moves[randomIndex] as Move
 }
 
-const determineRoundResult = (playerMove: Move, computerMove: Move): RoundResult => {
-    if (playerMove === computerMove) {
+const determineRoundResult = (playerMove: Move, botMove: Move): RoundResult => {
+    if (playerMove === botMove) {
         return {
             playerMove,
-            computerMove,
+            botMove,
             outcome: 'draw',
             message: 'It\'s a draw!',
         }
@@ -34,34 +34,34 @@ const determineRoundResult = (playerMove: Move, computerMove: Move): RoundResult
         scissor: 'paper',
     }
 
-    if (winningPairs[playerMove] === computerMove) {
+    if (winningPairs[playerMove] === botMove) {
         return {
             playerMove,
-            computerMove,
+            botMove,
             outcome: 'win',
-            message: `${playerMove} beats ${computerMove}!`,
+            message: `${playerMove} beats ${botMove}!`,
             roundWinner: 'player',
         }
     }
 
     return {
         playerMove,
-        computerMove,
+        botMove,
         outcome: 'lose',
-        message: `${computerMove} beats ${playerMove}!`,
-        roundWinner: 'computer',
+        message: `${botMove} beats ${playerMove}!`,
+        roundWinner: 'bot',
     }
 }
 
 class GameEngine {
     private playerScore: number = 0
-    private computerScore: number = 0
+    private botScore: number = 0
 
     determineWinnerResult() {
         if (this.playerScore === 3) {
             return 'player'
-        } else if (this.computerScore === 3) {
-            return 'computer'
+        } else if (this.botScore === 3) {
+            return 'bot'
         } else {
             null
         }
@@ -71,17 +71,17 @@ class GameEngine {
         this.playerScore++
     }
     addComputerScore() {
-        this.computerScore++
+        this.botScore++
     }
     getScores() {
         return {
             player: this.playerScore,
-            computer: this.computerScore
+            bot: this.botScore
         }
     }
     resetGame(): void {
         this.playerScore = 0
-        this.computerScore = 0
+        this.botScore = 0
     }
 
 }

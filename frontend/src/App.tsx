@@ -1,54 +1,64 @@
 import { useEffect, useState } from 'react'
 import './index.css'
 
+
 type Move = 'rock' | 'paper' | 'scissor'
 
 interface GameResult {
   playerMove: Move
-  computerMove: Move
+  botMove: Move
   outcome: 'win' | 'lose' | 'draw'
   message: string
-  roundWinner: 'player' | 'computer'
-  gameWinner: 'player' | 'computer'
+  roundWinner: 'player' | 'bot'
+  gameWinner: 'player' | 'bot'
 }
 
-interface LeaderboardEntry {
+interface GameHistoryEntry {
   id: number
   name: string
-  result: 'player' | 'computer'
+  result: 'player' | 'bot'
   playerTally: number
-  computerTally: number
+  botTally: number
   datestamp: string
 }
 
 function App() {
   const [gameState, setGameState] = useState<'waiting' | 'playing' | 'finished'>('waiting')
-  const [roundState, setRoundState] = useState<'countdown' | 'result'>('result')
+  const [roundState, setRoundState] = useState<'countdown' | 'result' | 'idle'>('idle')
   const [playerName, setPlayerName] = useState('')
   const [showNameInput, setShowNameInput] = useState(true)
   const [countdown, setCountdown] = useState(1)
-  const [playerMove, setSelectedMove] = useState<Move | null>(null)
-  const [computerMove, setComputerMove] = useState<Move | null>(null)
+  const [playerMove, setPlayerMove] = useState<Move | null>(null)
+  const [botMove, setBotMove] = useState<Move | null>(null)
   const [resultMessage, setResultMessage] = useState('')
-  const [checkHighScore, setCheckHighScore] = useState(false)
+  const [checkGameHistory, setCheckGameHistory] = useState(false)
   const [playerTally, setPlayerTally] = useState('')
-  const [computerTally, setComputerTally] = useState('')
-  const [printLeaderboard, setPrintLeaderboard] = useState<React.ReactNode>(null)
-  const [winner, setWinner] = useState<'player' | 'computer' | null>(null)
+  const [botTally, setBotTally] = useState('')
+  const [printGameHistory, setPrintGameHistory] = useState<React.ReactNode>(null)
+  const [winner, setWinner] = useState<'player' | 'bot' | null>(null)
   const [gameResult, setGameResult] = useState<GameResult | null>(null)
+  const getMoveImage = (move: Move | null) => {
+    if (move === 'rock') return './src/assets/images/Rock.jpg'
+    if (move === 'paper') return './src/assets/images/Paper.jpg'
+    if (move === 'scissor') return './src/assets/images/Scissor.jpg'
+    return ''
+  }
+
+  const playerRenderImagesJSX = <img src={getMoveImage(playerMove)} alt='Move' />
+  const botRenderImagesJSX = <img src={getMoveImage(botMove)} alt='Move' />
 
 
   // start game with selected move
   const startGame = (move: 'rock' | 'paper' | 'scissor') => {
-    setSelectedMove(move)
+    setPlayerMove(move)
     setResultMessage('')
     setRoundState('countdown')
     setCountdown(1)
   }
 
-  // handle High Score Button
-  const handleHighScoreClick = () => {
-    setCheckHighScore(true)
+  // handle Game History Button
+  const handleGameHistoryClick = () => {
+    setCheckGameHistory(true)
   }
 
   // handle Play button click
@@ -86,7 +96,7 @@ function App() {
   }
   // handle back button from High score page
   const handleBackButton = () => {
-    setCheckHighScore(false)
+    setCheckGameHistory(false)
   }
 
 
@@ -94,7 +104,7 @@ function App() {
 
 
 
-  // push data leaderboard to backend
+  // push data GameHistory to backend
   useEffect(() => {
     const abortController = new AbortController()
 
@@ -109,7 +119,7 @@ function App() {
             name: playerName,
             result: winner,
             playerTally: playerTally.length / 2,
-            computerTally: computerTally.length / 2,
+            botTally: botTally.length / 2,
             datestamp: new Date().toLocaleDateString('en-US', {
               month: 'short',
               day: 'numeric',
@@ -117,6 +127,7 @@ function App() {
             })
           }
           await fetch(`http://localhost:3000/api/game/save`, {
+            signal: abortController.signal,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -140,12 +151,12 @@ function App() {
 
 
 
-  // fetch data leaderboard if user wants to view high score 
+  // fetch data GameHistory if user wants to view high score 
   useEffect(() => {
     const abortController = new AbortController()
 
-    if (checkHighScore) {
-      const fetchGameLeaderboard = async () => {
+    if (checkGameHistory) {
+      const fetchGameGameHistory = async () => {
         try {
           const printSymbol = (count: number, emoji: string): string => {
             return emoji.repeat(count)
@@ -153,41 +164,41 @@ function App() {
           const res = await fetch(`http://localhost:3000/api/game/load`, {
             signal: abortController.signal // ✅ Add this!
           })
-          const leaderboardResult = await res.json()
+          const GameHistoryResult = await res.json()
 
-          //  Set the data (use leaderboardResult directly)
-          console.log('📊 Leaderboard data:', leaderboardResult)
+          //  Set the data (use GameHistoryResult directly)
+          console.log('📊 GameHistory data:', GameHistoryResult)
 
           //  Get games array from the result
-          const games = leaderboardResult.games
+          const games = GameHistoryResult.games
 
           //  Now create HTML from the fetched data
-          const leaderboardJSX = games.map((game: LeaderboardEntry) => (
-            <li key={game.id}>
+          const GameHistoryJSX = games.map((game: GameHistoryEntry) => (
+            <li>
               <h2>{game.name}</h2>
-              <h2>{game.result}</h2>
               <h2>{printSymbol(game.playerTally, '🔵')}</h2>
-              <h2>{printSymbol(game.computerTally, '🔴')}</h2>
+              <h2>{printSymbol(game.botTally, '🔴')}</h2>
+              <h2>{game.result === 'player' ? (game.name) : (game.result)}</h2>
               <h2>{game.datestamp}</h2>
             </li>
           ))
 
-          setPrintLeaderboard(<ol id='score-list-display'>{leaderboardJSX}</ol>)
+          setPrintGameHistory(<ol id='score-list-display'>{GameHistoryJSX}</ol>)
 
         } catch (error) {
           //  Ignore abort errors (cleanup)
-          console.error('❌ Error fetching leaderboard:', error)
+          console.error('❌ Error fetching GameHistory:', error)
         }
       }
 
-      fetchGameLeaderboard()
+      fetchGameGameHistory()
     }
 
     // ✅ Cleanup: abort fetch and mark as unmounted
     return () => {
       abortController.abort()
     }
-  }, [checkHighScore])
+  }, [checkGameHistory])
 
 
 
@@ -195,14 +206,16 @@ function App() {
 
 
 
-  // insert fetch call to server here to get computer move and result
+  // insert fetch call to server here to get bot move and result
   useEffect(() => {
     const abortController = new AbortController()
     if (roundState === 'countdown') {
       // Auto-runs when playerMove changes
       const fetchRoundResultData = async () => {
         try {
-          const res = await fetch(`http://localhost:3000/api/game/results?move=${playerMove}`)
+          const res = await fetch(`http://localhost:3000/api/game/results?move=${playerMove}`, {
+            signal: abortController.signal
+          })
           const gameResult = await res.json()
           setGameResult(gameResult.result)
         }
@@ -230,12 +243,12 @@ function App() {
     }
     if (countdown === 0) {
       if (gameResult) {
-        setComputerMove(gameResult.computerMove)
+        setBotMove(gameResult.botMove)
         setResultMessage(gameResult.message)
         if (gameResult.roundWinner === 'player') {
           setPlayerTally((prev) => prev + '🔵')
-        } else if (gameResult.roundWinner === 'computer') {
-          setComputerTally((prev) => prev + '🔴')
+        } else if (gameResult.roundWinner === 'bot') {
+          setBotTally((prev) => prev + '🔴')
         }
         setRoundState('result')
       }
@@ -268,12 +281,23 @@ function App() {
 
 
 
-  if (checkHighScore) {
+  if (checkGameHistory) {
     return (
-      <div>
+      <div className='title-container'>
         <h1 id='title'>Rock-Paper-Scissor</h1>
-        <h2 id='score-title-display'>Leaderboard</h2>
-        {printLeaderboard ? printLeaderboard : <p>No data</p>}
+        <h2 id='score-title-display'>Game History</h2>
+        {printGameHistory ? (
+          <>
+            <div id='GameHistory-headers-display'>
+              <h2>Player</h2>
+              <h2>Player Score</h2>
+              <h2>Bot Score</h2>
+              <h2>Winner</h2>
+              <h2>Date</h2>
+            </div>
+            {printGameHistory}
+          </>
+        ) : <p>No data</p>}
         <button id='back-btn' onClick={handleBackButton}>Go back</button>
       </div>
     )
@@ -283,22 +307,20 @@ function App() {
 
 
 
-
-
   // render different game states
   if (gameState === 'waiting') {
     return (
-      <div>
+      <div className='title-container'>
         <h1 id='title'>Rock-Paper-Scissor</h1>
-        <div>
+        <div id='title-btn-container'>
           <button id='play-btn' onClick={handlePlayClick}>Play</button>
-          <button id='view-highscore-btn' onClick={handleHighScoreClick}>View High Score</button>
+          <button id='view-gamehistory-btn' onClick={handleGameHistoryClick}>View Game History</button>
         </div>
       </div>
     )
   } else if (gameState === 'playing') {
     return (
-      <div>
+      <div className='title-container'>
         <h1 id='title'>Rock-Paper-Scissor</h1>
         {showNameInput ? (
           <div id='user-name-container'>
@@ -308,7 +330,10 @@ function App() {
                 id='user-name-el'
                 type='text'
                 value={playerName}
-                onChange={(e) => setPlayerName(e.target.value.slice(0, 1).toUpperCase() + e.target.value.slice(1))}
+                onChange={(e) => {
+                  const clean = e.target.value.replace(/[^a-zA-Z]/g, '');
+                  setPlayerName(clean.charAt(0).toUpperCase() + clean.slice(1));
+                }}
                 onKeyDown={handleKeyDown}
                 autoFocus
               />
@@ -317,19 +342,19 @@ function App() {
         ) : (
           <>
             <h2 id='tally-display'>{playerName}: {playerTally}</h2>
-            <h2 id='tally-display'>Computer: {computerTally}</h2>
+            <h2 id='tally-display'>Bot: {botTally}</h2>
             {roundState === 'countdown' ? (
               <>
-                <div id='move-dispslay-container'>
-                  <h2 id='move-display'>{playerMove}</h2>
+                <div id='move-display-container'>
+                  <h2 id='move-display'>{playerRenderImagesJSX}</h2>
                 </div>
                 <h2 id='countdown-display'>{countdown}</h2>
               </>
             ) : roundState === 'result' ? (
               <>
                 <div id='move-display-container'>
-                  <h2 id='move-display'>{playerMove}</h2>
-                  <h2 id='computer-move-display'>{computerMove}</h2>
+                  <h2 id='move-display'>{playerRenderImagesJSX}</h2>
+                  <h2 id='bot-move-display'>{botRenderImagesJSX}</h2>
                 </div>
                 <h2 id='countdown-display'>{resultMessage}</h2>
                 <div id='game-btns-container'>
@@ -353,29 +378,30 @@ function App() {
     )
   } else if (gameState === 'finished') {
     return (
-      <div>
+      <div className='title-container'>
         <h1 id='title'>Rock-Paper-Scissor</h1>
         <h2 id='tally-display'>{playerName}: {playerTally}</h2>
-        <h2 id='tally-display'>Computer: {computerTally}</h2>
+        <h2 id='tally-display'>Bot: {botTally}</h2>
         <div id='move-display-container'>
-          <h2 id='move-display'>{playerMove}</h2>
-          <h2 id='computer-move-display'>{computerMove}</h2>
-          <h2 id='countdown-display'>{resultMessage}</h2>
+          <h2 id='move-display'>{playerRenderImagesJSX}</h2>
+          <h2 id='bot-move-display'>{botRenderImagesJSX}</h2>
         </div>
+        <h2 id='countdown-display'>{resultMessage}</h2>
         {winner === 'player' ? (
           <h2 id='winner-display'>{playerName} wins!</h2>
         ) : (
-          <h2 id='winner-display'>Computer wins!</h2>
+          <h2 id='winner-display'>Bot wins!</h2>
         )}
         <button
           onClick={() => {
             setGameState('playing')
-            // setPlayerName('')
-            setSelectedMove(null)
+            setPlayerMove(null)
             setResultMessage('')
             setPlayerTally('')
-            setComputerTally('')
+            setBotTally('')
             setWinner(null)
+            setBotMove(null)
+            setRoundState('idle')
           }}
         >
           Play Again
@@ -384,16 +410,19 @@ function App() {
           onClick={() => {
             setGameState('waiting')
             setPlayerName('')
-            setSelectedMove(null)
+            setPlayerMove(null)
             setResultMessage('')
             setPlayerTally('')
-            setComputerTally('')
+            setBotTally('')
             setWinner(null)
+            setShowNameInput(true)
+            setBotMove(null)
+            setRoundState('idle')
           }}
         >
           New Game
         </button>
-        <button id='view-highscore-btn' onClick={handleHighScoreClick}>View High Score</button>
+        <button id='view-gamehistory-btn' onClick={handleGameHistoryClick}>View Game History</button>
       </div>
     )
   }
