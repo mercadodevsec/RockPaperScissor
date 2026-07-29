@@ -166,9 +166,6 @@ function App() {
           })
           const GameHistoryResult = await res.json()
 
-          //  Set the data (use GameHistoryResult directly)
-          console.log('📊 GameHistory data:', GameHistoryResult)
-
           //  Get games array from the result
           const games = GameHistoryResult.games
 
@@ -178,7 +175,7 @@ function App() {
               <h2>{game.name}</h2>
               <h2>{printSymbol(game.playerTally, '🔵')}</h2>
               <h2>{printSymbol(game.botTally, '🔴')}</h2>
-              <h2>{game.result === 'player' ? (game.name) : (game.result)}</h2>
+              <h2>{game.result === 'player' ? (game.name) : (game.result.charAt(0).toUpperCase() +game.result.slice(1))}</h2>
               <h2>{game.datestamp}</h2>
             </li>
           ))
@@ -187,14 +184,13 @@ function App() {
 
         } catch (error) {
           //  Ignore abort errors (cleanup)
-          console.error('❌ Error fetching GameHistory:', error)
+          console.error('Error fetching GameHistory:', error)
         }
       }
 
       fetchGameGameHistory()
     }
 
-    // ✅ Cleanup: abort fetch and mark as unmounted
     return () => {
       abortController.abort()
     }
@@ -256,7 +252,7 @@ function App() {
     }
     const timer = window.setTimeout(() => {
       setCountdown((prev) => prev - 1)
-    }, 1000)
+    }, 500)
 
     return () => window.clearTimeout(timer)
   }, [countdown, roundState, gameResult])
