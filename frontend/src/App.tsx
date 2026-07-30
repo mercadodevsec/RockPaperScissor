@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react'
 import './index.css'
+import rockImage from './assets/images/Rock.jpg'
+import paperImage from './assets/images/Paper.jpg'
+import scissorImage from './assets/images/Scissor.jpg'
 
 
 type Move = 'rock' | 'paper' | 'scissor'
@@ -38,14 +41,21 @@ function App() {
   const [winner, setWinner] = useState<'player' | 'bot' | null>(null)
   const [gameResult, setGameResult] = useState<GameResult | null>(null)
   const getMoveImage = (move: Move | null) => {
-    if (move === 'rock') return './src/assets/images/Rock.jpg'
-    if (move === 'paper') return './src/assets/images/Paper.jpg'
-    if (move === 'scissor') return './src/assets/images/Scissor.jpg'
+    if (move === 'rock') return rockImage
+    if (move === 'paper') return paperImage
+    if (move === 'scissor') return scissorImage
     return ''
   }
 
-  const playerRenderImagesJSX = <img src={getMoveImage(playerMove)} alt='Move' />
-  const botRenderImagesJSX = <img src={getMoveImage(botMove)} alt='Move' />
+  const getMoveAlt = (move: Move | null) => {
+    if (move === 'rock') return 'Rock'
+    if (move === 'paper') return 'Paper'
+    if (move === 'scissor') return 'Scissor'
+    return ''
+  }
+
+  const playerRenderImagesJSX = <img src={getMoveImage(playerMove)} alt={getMoveAlt(playerMove)} />
+  const botRenderImagesJSX = <img src={getMoveImage(botMove)} alt={getMoveAlt(botMove)} />
 
 
   // start game with selected move
@@ -175,7 +185,7 @@ function App() {
               <h2>{game.name}</h2>
               <h2>{printSymbol(game.playerTally, '🔵')}</h2>
               <h2>{printSymbol(game.botTally, '🔴')}</h2>
-              <h2>{game.result === 'player' ? (game.name) : (game.result.charAt(0).toUpperCase() +game.result.slice(1))}</h2>
+              <h2>{game.result === 'player' ? (game.name) : (game.result.charAt(0).toUpperCase() + game.result.slice(1))}</h2>
               <h2>{game.datestamp}</h2>
             </li>
           ))

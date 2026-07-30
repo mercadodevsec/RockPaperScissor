@@ -2,7 +2,8 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: url('./assets/images/main-background.jpg');
+    background-image: url('./assets/images/main-background.jpg');
+    background-position: center;
     background-size: cover;
     min-height: 100vh;
     display: flex;

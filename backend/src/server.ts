@@ -1,18 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import cors from 'cors'
-import dotenv from 'dotenv'
 import express from 'express'
 import { parse } from 'yaml'
 import swaggerUi from 'swagger-ui-express'
 import gameRoutes from './routes/gameRoutes.ts'
 
 
-
-dotenv.config()
-
 const app = express();
-const PORT = process.env.PORT || 3000
+const PORT = 3000
 const swaggerDocument = parse(readFileSync(resolve(process.cwd(), './src/swagger/swagger.yml'), 'utf8'))
 
 app.use(cors())

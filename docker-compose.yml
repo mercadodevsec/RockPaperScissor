@@ -1,0 +1,14 @@
+services:
+  backend:
+    build: ./backend
+    image: rps-backend:latest
+    ports:
+      - "3000:3000"
+    container_name: backend-container
+
+  frontend:
+    build: ./frontend
+    image: rps-frontend:latest
+    ports:
+      - "5173:5173"
+    container_name: frontend-container
