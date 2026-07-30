@@ -14,6 +14,43 @@ A simple rock-paper-scissors game with a React frontend and an Express/TypeScrip
 - Frontend: React, Vite, TypeScript
 - Backend: Express, TypeScript, Sequelize, SQLite, Swagger
 
+## Docker Support
+
+This project includes Docker support for both the frontend and backend.
+
+### Pull images from Docker Hub
+
+```bash
+docker pull mikkogcf/rps-backend:latest
+docker pull mikkogcf/rps-frontend:latest
+```
+
+### Run the backend container
+
+```bash
+docker run -d -p 3000:3000 --name rps-backend mikkogcf/rps-backend:latest
+```
+
+### Run the frontend container
+
+```bash
+docker run -d -p 5173:5173 --name rps-frontend mikkogcf/rps-frontend:latest
+```
+
+### Run with Docker Compose
+
+From the project root:
+
+```bash
+docker compose up --build
+```
+
+Then open:
+
+- Frontend: http://localhost:5173
+- Backend: http://localhost:3000
+- Swagger docs: http://localhost:3000/api-docs
+
 ## Project Structure
 
 - backend/ - API server, routes, models, and database sync logic
