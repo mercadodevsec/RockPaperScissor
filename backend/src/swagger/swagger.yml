@@ -42,7 +42,7 @@ paths:
                     message: "Results loaded successfully"
                     result:
                       playerMove: "rock"
-                      computerMove: "scissor"
+                      botMove: "scissor"
                       outcome: "win"
                       message: "rock beats scissor!"
                       roundWinner: "player"
@@ -52,7 +52,7 @@ paths:
                     message: "Results loaded successfully"
                     result:
                       playerMove: "paper"
-                      computerMove: "rock"
+                      botMove: "rock"
                       outcome: "win"
                       message: "paper beats rock!"
                       roundWinner: "player"
@@ -91,7 +91,7 @@ paths:
                   name: "John Doe"
                   result: "win"
                   playerTally: 3
-                  computerTally: 1
+                  botTally: 1
                   datestamp: "Jul 28, 2026"
               lossExample:
                 summary: Player loses
@@ -99,7 +99,7 @@ paths:
                   name: "Jane Smith"
                   result: "loss"
                   playerTally: 2
-                  computerTally: 3
+                  botTally: 3
                   datestamp: "Jul 28, 2026"
 
       responses:
@@ -127,7 +127,7 @@ paths:
   /load:
     get:
       summary: Load the game history
-      description: Retrieve all saved games sorted by highest player score (descending) and newest first
+      description: Retrieve all saved games sorted by newest first
       responses:
         200:
           description: GameHistory loaded successfully
@@ -138,20 +138,23 @@ paths:
               example:
                 message: "GameHistory loaded successfully"
                 games:
-                  - name: "John Doe"
+                  - id: 1
+                    name: "John Doe"
                     result: "win"
                     playerTally: 3
-                    computerTally: 1
+                    botTally: 1
                     datestamp: "Jul 26, 2026"
-                  - name: "Jane Smith"
+                  - id: 2
+                    name: "Jane Smith"
                     result: "loss"
                     playerTally: 2
-                    computerTally: 3
+                    botTally: 3
                     datestamp: "Jul 27, 2026"
-                  - name: "Alex Johnson"
+                  - id: 3
+                    name: "Alex Johnson"
                     result: "draw"
                     playerTally: 2
-                    computerTally: 2
+                    botTally: 2
                     datestamp: "Jul 28, 2026"
         500:
           description: Failed to load game history
@@ -160,7 +163,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "Failed to load the game history"
+                error: "Failed to load the gamehistory"
 
   /reset:
     post:
@@ -186,7 +189,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               example:
-                error: "Something went wrong. Failed to reset game"
+                error: "Soomething went wrong. Failed to reset game"
 
 components:
   schemas:
@@ -197,7 +200,7 @@ components:
         - name
         - result
         - playerTally
-        - computerTally
+        - botTally
         - datestamp
       properties:
         name:
@@ -214,10 +217,10 @@ components:
           minimum: 0
           description: Player's final score (0-3 for standard RPS)
           example: 3
-        computerTally:
+        botTally:
           type: integer
           minimum: 0
-          description: Computer's final score (0-3 for standard RPS)
+          description: Bot's final score (0-3 for standard RPS)
           example: 1
         datestamp:
           type: string
@@ -241,10 +244,10 @@ components:
               enum: [rock, paper, scissor]
               description: The player's move
               example: "rock"
-            computerMove:
+            botMove:
               type: string
               enum: [rock, paper, scissor]
-              description: The computer's move
+              description: The bot's move
               example: "scissor"
             outcome:
               type: string
@@ -257,7 +260,7 @@ components:
               example: "rock beats scissor!"
             roundWinner:
               type: string
-              enum: [player, computer]
+              enum: [player, bot]
               description: Who won the round (only present if not a draw)
               example: "player"
 
@@ -272,7 +275,7 @@ components:
               properties:
                 gameWinner:
                   type: string
-                  enum: [player, computer]
+                  enum: [player, bot]
                   description: Who won the entire match (game auto-resets after this)
                   example: "player"
 
@@ -290,6 +293,10 @@ components:
     GameEntry:
       type: object
       properties:
+        id:
+          type: integer
+          description: Database ID of the game entry
+          example: 1
         name:
           type: string
           description: Player's name
@@ -303,9 +310,9 @@ components:
           type: integer
           description: Player's final score
           example: 3
-        computerTally:
+        botTally:
           type: integer
-          description: Computer's final score
+          description: Bot's final score
           example: 1
         datestamp:
           type: string
