@@ -78,12 +78,13 @@ function App() {
     // fetch reset api
     const resetGame = async () => {
       try {
-        await fetch('http://localhost:3000/api/game/reset', {
+        const res = await fetch('http://localhost:3000/api/game/reset', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           }
-        })
+        }).then(res => res.json())
+        console.log(res.message)
       } catch (error) {
         console.log('Reset failed:', error)
       }
@@ -114,7 +115,7 @@ function App() {
 
 
 
-  // push data GameHistory to backend
+  // useEffect to save game result to server when game is finished
   useEffect(() => {
     const abortController = new AbortController()
 
@@ -136,14 +137,16 @@ function App() {
               year: 'numeric'
             })
           }
-          await fetch(`http://localhost:3000/api/game/save`, {
+          const res = await fetch(`http://localhost:3000/api/game/save`, {
             signal: abortController.signal,
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify(payload)
-          })
+          }).then(res => res.json())
+          console.log(res.message)
+
         } catch (error) {
           console.error('Error:', error)
         }
@@ -151,7 +154,7 @@ function App() {
       pushLeaderbordData()
     }
     return () => {
-      abortController.abort() // 
+      abortController.abort()
     }
   }, [gameState])
 
@@ -175,13 +178,9 @@ function App() {
             signal: abortController.signal // ✅ Add this!
           })
           const GameHistoryResult = await res.json()
-
-          //  Get games array from the result
           const games = GameHistoryResult.games
-
-          //  Now create HTML from the fetched data
           const GameHistoryJSX = games.map((game: GameHistoryEntry) => (
-            <li>
+            <li key={game.id}>
               <h2>{game.name}</h2>
               <h2>{printSymbol(game.playerTally, '🔵')}</h2>
               <h2>{printSymbol(game.botTally, '🔴')}</h2>
@@ -189,11 +188,10 @@ function App() {
               <h2>{game.datestamp}</h2>
             </li>
           ))
-
           setPrintGameHistory(<ol id='score-list-display'>{GameHistoryJSX}</ol>)
+          console.log(GameHistoryResult.message)
 
         } catch (error) {
-          //  Ignore abort errors (cleanup)
           console.error('Error fetching GameHistory:', error)
         }
       }
@@ -224,6 +222,7 @@ function App() {
           })
           const gameResult = await res.json()
           setGameResult(gameResult.result)
+          console.log(gameResult.message)
         }
         catch (error) {
           console.error('Error:', error)
@@ -242,7 +241,7 @@ function App() {
 
 
 
-  // countdown effect
+  // countdown useEffect to handle countdown and result display
   useEffect(() => {
     if (roundState !== 'countdown') {
       return
@@ -286,7 +285,7 @@ function App() {
 
 
 
-
+  // checks game history state and renders the game history page if true, otherwise renders the game states
   if (checkGameHistory) {
     return (
       <div className='title-container'>

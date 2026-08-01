@@ -9,8 +9,6 @@ info:
 servers:
   - url: http://localhost:3000/api/game
     description: Development server
-  - url: https://your-production-url.com/api/game
-    description: Production server
 
 paths:
   /results:

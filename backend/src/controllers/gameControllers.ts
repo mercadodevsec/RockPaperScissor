@@ -2,6 +2,8 @@ import type { Request, Response } from 'express';
 import Game, { getComputerMove, determineRoundResult, type Move } from '../game/GameEngine.ts'
 import GameModel from '../models/Game.ts'
 
+
+// router.post('/reset', resetGame)
 export const resetGame = (req: Request, res: Response) => {
     try {
         Game.resetGame()
@@ -13,6 +15,7 @@ export const resetGame = (req: Request, res: Response) => {
 
 }
 
+// router.get('/results', roundResults)
 export const roundResults = (req: Request, res: Response) => {
     const move = req.query.move?.toString().toLowerCase();
 
@@ -53,13 +56,14 @@ export const roundResults = (req: Request, res: Response) => {
     });
 }
 
+// router.post('/save', saveGameResult)
 export const saveGameResult = async (req: Request, res: Response) => {
     try {
         //  Gets payload from request body
         const { name, result, playerTally, botTally, datestamp } = req.body
 
         // Uses Model to save (Model uses connection internally)
-        const game = await GameModel.create({
+        await GameModel.create({
             name,
             result,
             playerTally,
@@ -73,12 +77,13 @@ export const saveGameResult = async (req: Request, res: Response) => {
     }
 }
 
+// router.get('/load', loadGameHistory)
 export const loadGameHistory = async (req: Request, res: Response) => {
     try {
         const games = await GameModel.findAll({
-            attributes: ['name', 'result', 'playerTally', 'botTally', 'datestamp'],
+            attributes: ['id', 'name', 'result', 'playerTally', 'botTally', 'datestamp'],
             order: [
-                ['createdAt', 'DESC']     // Then newest first
+                ['createdAt', 'DESC']  
             ],
         })
 
@@ -89,7 +94,7 @@ export const loadGameHistory = async (req: Request, res: Response) => {
             games: games
         })
     } catch (error) {
-        console.error('❌ Error loading gamehistory:', error)
+        console.error('Error loading gamehistory:', error)
         res.status(500).json({ error: 'Failed to load the gamehistory' })
     }
 }
