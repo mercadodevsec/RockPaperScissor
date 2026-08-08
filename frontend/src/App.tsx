@@ -343,7 +343,7 @@ function App() {
               type='password'
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={{ marginLeft: '10px' }}  // 👈 Space before password input
+              style={{ marginLeft: '10px', marginRight: '30px' }}  // 👈 Space before password input
             />
           </label>
           {authError && <p className='error-text'>{authError}</p>}
@@ -364,8 +364,8 @@ function App() {
           <h1 id='title'>Rock-Paper-Scissor</h1>
           <div className='player-meta'>
             <span>{user ? `Signed in as ${user.username}` : 'Not signed in'}</span>
-            <button onClick={loadHistory}>My History</button>
-            <button onClick={() => setPage('search')}>Search players</button>
+            <button onClick={loadHistory} style={{ margin: '0 10px' }}>My History</button>
+            <button onClick={() => setPage('search')} style={{ marginRight: '10px' }}>Search players</button>
             <button className='secondary-button' onClick={requestSignOut}>Sign Out</button>
           </div>
         </div>
@@ -373,12 +373,12 @@ function App() {
           <div className='score-card player-card'>
             <span>{user?.username || 'You'}</span>
             <strong>{playerScore}</strong>
-            <p>{playerEmojis || '0'}</p>
+            <p>{playerEmojis || ''}</p>
           </div>
           <div className='score-card bot-card'>
             <span>Bot</span>
             <strong>{botScore}</strong>
-            <p>{botEmojis || '0'}</p>
+            <p>{botEmojis || ''}</p>
           </div>
         </div>
         <div className='match-status'>
@@ -415,6 +415,11 @@ function App() {
               <button onClick={() => handleMove('scissor')}>Scissors</button>
             </div>
           </>
+        ) : winner ? (
+          <div className='action-row'>
+            <button onClick={resetMatch}>Play Again</button>
+            <button onClick={loadHistory}>View History</button>
+          </div>
         ) : (
           <div id='game-btns-container'>
             <button onClick={() => handleMove('rock')}>Rock</button>
@@ -422,12 +427,7 @@ function App() {
             <button onClick={() => handleMove('scissor')}>Scissors</button>
           </div>
         )}
-        {winner && (
-          <div className='action-row'>
-            <button onClick={resetMatch}>Play Again</button>
-            <button onClick={loadHistory}>View History</button>
-          </div>
-        )}
+
       </div>
     </div>
   )
@@ -443,16 +443,12 @@ function App() {
               <p className='section-label'>Match summary</p>
               <p className='section-copy'>Review your completed games, scores, and match results.</p>
             </div>
-            <button className='secondary-button' onClick={requestSignOut}>Sign Out</button>
           </div>
           <div className='panel-meta-row'>
             <div>
               <p className='section-label'>Match summary</p>
               <p className='section-copy'>Review your completed games, scores, and match results.</p>
             </div>
-            <button className='back-button' onClick={() => setPage('game')}>
-              ← Back
-            </button>
           </div>
 
           {historyLoading === 'loading' && <p className='status-text'>Loading your games...</p>}
@@ -465,7 +461,6 @@ function App() {
               {history.map((game) => (
                 <article key={game.id} className='history-card'>
                   <div className='history-card-header'>
-                    <span className='history-card-title'>{formatResultLabel(game.result)}</span>
                     <span className={`history-result-pill ${game.result}`}>{formatResultLabel(game.result)}</span>
                   </div>
                   <div className='history-card-body'>
@@ -476,10 +471,6 @@ function App() {
                     <div className='history-stat'>
                       <span className='stat-label'>Played on</span>
                       <time>{formatDateTime(game.createdAt)}</time>
-                    </div>
-                    <div className='history-stat'>
-                      <span className='stat-label'>Match type</span>
-                      <span>Best of 5</span>
                     </div>
                   </div>
                 </article>
@@ -507,11 +498,10 @@ function App() {
               <p className='section-label'>Search players</p>
               <p className='section-copy'>Find other players and view their public stats.</p>
             </div>
-            <button className='secondary-button' onClick={requestSignOut}>Sign Out</button>
           </div>
           <div className='search-bar'>
             <input value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder='Search players by username' />
-            <button disabled={searchLoading === 'loading'} onClick={handleSearch}>Search</button>
+            <button disabled={searchLoading === 'loading'} onClick={handleSearch} style={{marginLeft: '10px'}}>Search</button>
           </div>
           {searchLoading === 'loading' && <p>Searching...</p>}
           {searchError && <p className='error-text'>{searchError}</p>}
@@ -532,10 +522,6 @@ function App() {
                   <h2>{selectedPlayer.username}</h2>
                 </div>
                 <div className='panel-meta-row'>
-                  <button className='secondary-button' onClick={requestSignOut}>Sign Out</button>
-                  <button className='back-button' onClick={() => setPage('game')}>
-                    ← Back
-                  </button>
                 </div>
               </div>
               <div className='player-stat-grid'>

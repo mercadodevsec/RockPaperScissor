@@ -197,6 +197,14 @@ body::before {
     text-transform: uppercase;
 }
 
+ul {
+    list-style-type: none;
+}
+
+input {
+    padding: 5px;
+}
+
 .history-result-pill.win {
     background: rgba(45, 212, 191, 0.16);
     color: #9ef4e1;
@@ -621,6 +629,7 @@ button:active {
 }
 
 @keyframes pulse {
+
     0%,
     100% {
         transform: scale(1);
@@ -632,6 +641,7 @@ button:active {
 }
 
 @keyframes floatCard {
+
     0%,
     100% {
         transform: translateY(0);
