@@ -1,16 +1,13 @@
 import express from 'express'
-import { roundResults, saveGameResult, loadGameHistory, resetGame } from '../controllers/gameControllers.ts'
+import { authenticate } from '../middleware/authMiddleware.ts'
+import { playRound, saveGame, getMyGames, getGameDetails, resetGame } from '../controllers/gameControllers.ts'
 
 const router = express.Router()
 
-
-// GEt methods
-router.get('/results', roundResults)
-router.get('/load', loadGameHistory)
-
-// POST methods
-router.post('/save', saveGameResult)
+router.get('/results', playRound)
+router.post('/save', authenticate, saveGame)
+router.get('/me/games', authenticate, getMyGames)
+router.get('/:gameId', authenticate, getGameDetails)
 router.post('/reset', resetGame)
 
-
-export default router;
+export default router

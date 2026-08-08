@@ -1,7 +1,8 @@
-import GameModel from './src/models/Game.ts'
-
+import sequelize from './src/utils/connection.ts'
+import './src/models/index.ts'
 
 // use this to sync database by deleting then creating new one with the latest database implementations
-GameModel.sync({force: true})
+await sequelize.sync({ force: true })
 
-// GameModel.sync({alter: true})
+// For safe migrations later, consider using alter instead of force
+// await sequelize.sync({ alter: true })

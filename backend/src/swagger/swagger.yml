@@ -1,22 +1,221 @@
 openapi: 3.0.0
 info:
-  title: Rock-Paper-Scissors Game API
-  description: API for managing RPS game rounds, saving results, resetting game, and loading game history
+  title: Rock-Paper-Scissors API
   version: 1.0.0
-  contact:
-    name: API Support
-
+  description: API for player authentication, game play, history, and public player statistics.
 servers:
-  - url: http://localhost:3000/api/game
-    description: Development server
-
+  - url: http://localhost:3000/api
+    description: Local development server
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    AuthRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          example: player1
+        password:
+          type: string
+          example: secretPassword123
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+          description: JWT authentication token
+        user:
+          $ref: '#/components/schemas/UserSummary'
+    UserSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+    RoundResult:
+      type: object
+      properties:
+        playerMove:
+          type: string
+          enum: [rock, paper, scissor]
+        botMove:
+          type: string
+          enum: [rock, paper, scissor]
+        outcome:
+          type: string
+          enum: [win, lose, draw]
+        message:
+          type: string
+        roundWinner:
+          type: string
+          enum: [player, bot]
+    RoundResultResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        result:
+          $ref: '#/components/schemas/RoundResult'
+    SaveGameRequest:
+      type: object
+      required:
+        - result
+        - playerTally
+        - botTally
+        - rounds
+      properties:
+        result:
+          type: string
+          enum: [win, lose, draw]
+        playerTally:
+          type: integer
+        botTally:
+          type: integer
+        rounds:
+          type: array
+          items:
+            type: object
+            required:
+              - playerMove
+              - botMove
+              - outcome
+            properties:
+              playerMove:
+                type: string
+                enum: [rock, paper, scissor]
+              botMove:
+                type: string
+                enum: [rock, paper, scissor]
+              outcome:
+                type: string
+                enum: [win, lose, draw]
+    GameSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        result:
+          type: string
+          enum: [win, lose, draw]
+        playerTally:
+          type: integer
+        botTally:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+    PlayerSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        username:
+          type: string
+    PlayerGamesResponse:
+      type: object
+      properties:
+        player:
+          $ref: '#/components/schemas/PlayerSummary'
+        games:
+          type: array
+          items:
+            $ref: '#/components/schemas/GameSummary'
+    PlayerStatsResponse:
+      type: object
+      properties:
+        player:
+          $ref: '#/components/schemas/PlayerSummary'
+        stats:
+          type: object
+          properties:
+            totalGames:
+              type: integer
+            wins:
+              type: integer
+            losses:
+              type: integer
+            draws:
+              type: integer
+            winPercentage:
+              type: integer
+            totalRounds:
+              type: integer
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
 paths:
-  /results:
+  /auth/register:
+    post:
+      summary: Register a new player account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '201':
+          description: Player registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid registration data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Username already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      summary: Player login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRequest'
+      responses:
+        '200':
+          description: Player logged in successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Invalid login data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/results:
     get:
       summary: Play a round of Rock-Paper-Scissors
-      description: |
-        Submit your move and get the round result.
-        When a player reaches 3 points, the game ends, returns a winner, and automatically resets.
       parameters:
         - in: query
           name: move
@@ -24,86 +223,32 @@ paths:
           schema:
             type: string
             enum: [rock, paper, scissor]
-          description: Your move choice
-          example: rock
       responses:
-        200:
-          description: Round result (or game winner if match ended)
+        '200':
+          description: Round outcome returned successfully
           content:
             application/json:
               schema:
-                oneOf:
-                  - $ref: '#/components/schemas/RoundResult'
-                  - $ref: '#/components/schemas/GameWinnerResult'
-              examples:
-                roundResult:
-                  summary: Normal round (game continues)
-                  value:
-                    message: "Results loaded successfully"
-                    result:
-                      playerMove: "rock"
-                      botMove: "scissor"
-                      outcome: "win"
-                      message: "rock beats scissor!"
-                      roundWinner: "player"
-                gameWinner:
-                  summary: Game over (winner declared and game auto-reset)
-                  value:
-                    message: "Results loaded successfully"
-                    result:
-                      playerMove: "paper"
-                      botMove: "rock"
-                      outcome: "win"
-                      message: "paper beats rock!"
-                      roundWinner: "player"
-                      gameWinner: "player"
-        400:
+                $ref: '#/components/schemas/RoundResultResponse'
+        '400':
           description: Invalid move parameter
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                message: "Please provide a valid move query parameter: rock, paper, or scissor"
-        500:
-          description: Internal server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Something went wrong"
-
-  /save:
+  /game/save:
     post:
-      summary: Save a completed game to the game history
-      description: Save game results after a match is complete
+      summary: Save a finished game for the authenticated player
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/SaveGameRequest'
-            examples:
-              winExample:
-                summary: Player wins
-                value:
-                  name: "John Doe"
-                  result: "win"
-                  playerTally: 3
-                  botTally: 1
-                  datestamp: "Jul 28, 2026"
-              lossExample:
-                summary: Player loses
-                value:
-                  name: "Jane Smith"
-                  result: "loss"
-                  playerTally: 2
-                  botTally: 3
-                  datestamp: "Jul 28, 2026"
-
       responses:
-        201:
+        '201':
           description: Game saved successfully
           content:
             application/json:
@@ -112,222 +257,195 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: "Game saved successfully"
-              example:
-                message: "Game saved successfully"
-        500:
-          description: Failed to save game
+                  gameId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid game payload
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Failed to save game"
-
-  /load:
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /game/me/games:
     get:
-      summary: Load the game history
-      description: Retrieve all saved games sorted by newest first
+      summary: Load authenticated player game history
+      security:
+        - bearerAuth: []
       responses:
-        200:
-          description: GameHistory loaded successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/GameHistoryResponse'
-              example:
-                message: "GameHistory loaded successfully"
-                games:
-                  - id: 1
-                    name: "John Doe"
-                    result: "win"
-                    playerTally: 3
-                    botTally: 1
-                    datestamp: "Jul 26, 2026"
-                  - id: 2
-                    name: "Jane Smith"
-                    result: "loss"
-                    playerTally: 2
-                    botTally: 3
-                    datestamp: "Jul 27, 2026"
-                  - id: 3
-                    name: "Alex Johnson"
-                    result: "draw"
-                    playerTally: 2
-                    botTally: 2
-                    datestamp: "Jul 28, 2026"
-        500:
-          description: Failed to load game history
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Failed to load the gamehistory"
-
-  /reset:
-    post:
-      summary: Reset the current game state
-      description: Reset scores and game state to start a new match manually
-      responses:
-        200:
-          description: Game reset successfully
+        '200':
+          description: Player game history returned successfully
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  message:
-                    type: string
-                    example: "Game reset successfully"
-              example:
-                message: "Game reset successfully"
-        500:
-          description: Failed to reset game
+                  games:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/GameSummary'
+        '401':
+          description: Authentication required
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-              example:
-                error: "Soomething went wrong. Failed to reset game"
-
-components:
-  schemas:
-    # ============= REQUEST SCHEMAS =============
-    SaveGameRequest:
-      type: object
-      required:
-        - name
-        - result
-        - playerTally
-        - botTally
-        - datestamp
-      properties:
-        name:
-          type: string
-          description: Player's name
-          example: "John Doe"
-        result:
-          type: string
-          enum: [win, loss, draw]
-          description: Final game result
-          example: "win"
-        playerTally:
-          type: integer
-          minimum: 0
-          description: Player's final score (0-3 for standard RPS)
-          example: 3
-        botTally:
-          type: integer
-          minimum: 0
-          description: Bot's final score (0-3 for standard RPS)
-          example: 1
-        datestamp:
-          type: string
-          format: date-time
-          description: When the game was played
-          example: "Jul 28, 2026"
-
-    # ============= RESPONSE SCHEMAS =============
-    RoundResult:
-      type: object
-      properties:
-        message:
-          type: string
-          description: Status message
-          example: "Results loaded successfully"
-        result:
-          type: object
-          properties:
-            playerMove:
-              type: string
-              enum: [rock, paper, scissor]
-              description: The player's move
-              example: "rock"
-            botMove:
-              type: string
-              enum: [rock, paper, scissor]
-              description: The bot's move
-              example: "scissor"
-            outcome:
-              type: string
-              enum: [win, lose, draw]
-              description: The result of the round
-              example: "win"
-            message:
-              type: string
-              description: Descriptive message about the round outcome
-              example: "rock beats scissor!"
-            roundWinner:
-              type: string
-              enum: [player, bot]
-              description: Who won the round (only present if not a draw)
-              example: "player"
-
-    GameWinnerResult:
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/RoundResult'
-        - type: object
-          properties:
-            result:
-              type: object
-              properties:
-                gameWinner:
-                  type: string
-                  enum: [player, bot]
-                  description: Who won the entire match (game auto-resets after this)
-                  example: "player"
-
-    GameHistoryResponse:
-      type: object
-      properties:
-        message:
-          type: string
-          example: "GameHistory loaded successfully"
-        games:
-          type: array
-          items:
-            $ref: '#/components/schemas/GameEntry'
-
-    GameEntry:
-      type: object
-      properties:
-        id:
-          type: integer
-          description: Database ID of the game entry
-          example: 1
-        name:
-          type: string
-          description: Player's name
-          example: "John Doe"
-        result:
-          type: string
-          enum: [win, loss, draw]
-          description: Final game result
-          example: "win"
-        playerTally:
-          type: integer
-          description: Player's final score
-          example: 3
-        botTally:
-          type: integer
-          description: Bot's final score
-          example: 1
-        datestamp:
-          type: string
-          format: date-time
-          description: When the game was played
-          example: "Jul 28, 2026"
-
-    ErrorResponse:
-      type: object
-      properties:
-        error:
-          type: string
-          description: Error message (for 500 errors)
-          example: "Failed to save game"
-        message:
-          type: string
-          description: Error message (for 400 validation errors)
-          example: "Please provide a valid move query parameter: rock, paper, or scissor"
+  /game/{gameId}:
+    get:
+      summary: Load authenticated player's game details
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: gameId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Game details returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  game:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        format: uuid
+                      playerId:
+                        type: string
+                        format: uuid
+                      result:
+                        type: string
+                        enum: [win, lose, draw]
+                      playerTally:
+                        type: integer
+                      botTally:
+                        type: integer
+                      createdAt:
+                        type: string
+                        format: date-time
+                      player:
+                        $ref: '#/components/schemas/PlayerSummary'
+                      rounds:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RoundResult'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden to access this game
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Game not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /players/search:
+    get:
+      summary: Search for player accounts by username
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: username
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Matching players returned successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  players:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlayerSummary'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /players/{playerId}/games:
+    get:
+      summary: Load public game history for a player
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: playerId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Player public games returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerGamesResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /players/{playerId}/stats:
+    get:
+      summary: Load public statistics for a player
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: playerId
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Public player statistics returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlayerStatsResponse'
+        '401':
+          description: Authentication required
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Player not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'

@@ -1,37 +1,38 @@
-import { DataTypes, Model } from 'sequelize'
+import { DataTypes } from 'sequelize'
 import sequelize from '../utils/connection.ts'
 
 const Game = sequelize.define('Game', {
   id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
+    type: DataTypes.UUID,
+    defaultValue: DataTypes.UUIDV4,
+    primaryKey: true,
   },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false
+  playerId: {
+    type: DataTypes.UUID,
+    allowNull: false,
+    references: {
+      model: 'players',
+      key: 'id',
+    },
+    onDelete: 'CASCADE',
   },
   result: {
-    type: DataTypes.STRING,
-    allowNull: false
+    type: DataTypes.ENUM('win', 'lose', 'draw'),
+    allowNull: false,
   },
   playerTally: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: 0,
   },
   botTally: {
     type: DataTypes.INTEGER,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: 0,
   },
-  datestamp: {
-    type: DataTypes.STRING,
-    allowNull: false
-  }
 }, {
-  tableName: 'gamehistory',
-  timestamps: true
+  tableName: 'games',
+  timestamps: true,
 })
 
 export default Game
